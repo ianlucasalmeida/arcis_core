@@ -29,17 +29,23 @@ impl ArcisApp {
         let surface = dock_state.main_surface_mut();
         let main_node = egui_dock::NodeIndex::root();
 
-        let [_, _] = surface.split_left(main_node, 0.2, vec![ArcisPanel::WorkspaceLayers]);
-        let [center_node, _] = surface.split_right(main_node, 0.75, vec![ArcisPanel::Properties]);
-        let [_, _] = surface.split_below(center_node, 0.8, vec![ArcisPanel::TerminalLog]);
+        // 1. Separa a Esquerda (Project Explorer / View Hierarchy) com 20% da tela
+        let [_, rest] = surface.split_left(main_node, 0.2, vec![ArcisPanel::WorkspaceLayers]);
+        
+        // 2. Do restante, separa a Direita (Object Properties) com 25% do espaço restante
+        let [center_area, _] = surface.split_right(rest, 0.75, vec![ArcisPanel::Properties]);
+        
+        // 3. O que sobrou no meio, divide entre Viewport (Topo 80%) e Terminal (Base 20%)
+        let [_, _] = surface.split_below(center_area, 0.8, vec![ArcisPanel::TerminalLog]);
 
         Self {
             dock_state,
             state: ArcisState {
-                camadas_ativas: vec!["Modelo_Base.step".into()],
-                historico_terminal: vec!["[SYSTEM] Kernel Assíncrono iniciado. Digite 'LOAD' para testar a ingestão.".into()],
+                camadas_ativas: vec!["NASA_Earthdata_Dataset.tif".into(), "Modelo_Base.step".into()],
+                historico_terminal: vec!["[SYSTEM] Motor Arcis carregado. Módulos prontos.".into()],
                 input_terminal: String::new(),
-                vertices_carregados: Vec::new(), // <--- Inicializa vazio
+                vertices_carregados: std::sync::Arc::new(Vec::new()),
+                indices_carregados: std::sync::Arc::new(Vec::new()),
             },
             tx_comando,
             rx_resposta,
